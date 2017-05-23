@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 2.8.9)
+project(newhope)
+include_directories(include)
+set(SOURCES src/newhope.cpp src/IMAGE.cpp src/Task2.cpp src/Task3 src/Fourier)
+add_executable(image_newhope ${SOURCES})

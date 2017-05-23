@@ -1,0 +1,72 @@
+
+Image processing: task1 
+
+authors: Jakub Krymarys 203210, Maciej Wyrzuc 203223
+
+*********
+HOW TO INVOKE PROGRAM:
+
+image_newhope.exe --FUNCTION_NAME OPTIONAL_PARAMTER
+
+where OPTIONAL_PARAMTER can be:
+	For task1
+	- value of change
+	- multple of contrast change
+	
+	For task2
+	- channel 
+	- low pass filters mask 
+
+	
+--------------------------------------------------------------------------------
+********************************************************************************
+--------------------------------------------------------------------------------
+	
+
+Functions TASK 1:
+
+--help
+
+--median  		median filter
+--gmean			geometric mean filter
+
+--mse			mean square error
+--pmse			peak mean square error
+--snr			signal to noise error
+--psnr			peak signal to noise error
+--md			maximum difference
+
+
+
+two paramters( picture_name.extension --option):
+----------------------------------------
+
+--brightness  	unlimited but only reasonable values are from range -255,255 
+--contrast		level>1: increase contrast, level<1 degrease  contrast
+--negative
+--hflip			horizontal flip
+--vflip			vertical flip
+--dflip			diagonal flip
+--shrink 		
+--enlarge		
+
+--------------------------------------------------------------------------------
+
+TASK 2
+
+
+--histogram  
+--huniform  // H1
+--slowpass  // S1
+--orobertsi // O1
+
+--cmean
+--cvariance
+--cstdev
+--cvarcoi
+--casyco
+--cfasyco
+--cvarcoii
+--centropy
+
+Output file have name "output.bmp.
