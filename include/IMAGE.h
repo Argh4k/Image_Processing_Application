@@ -1,125 +1,421 @@
 
-
 #ifndef IMAGE_H_
 #define IMAGE_H_
 
-#include "CImg.h"
+#include "IMAGE.h"
+#include <iostream>
 #include <string>
+#include <fstream>
+#include <cmath>
+#include <vector>
+#include <array>
+#include "CImg.h"
 
 
 using namespace cimg_library;
-
-const int num_of_layers = 3;
-const int MAX_PIXEL_VALUE = 255;
-
-// FUNCTION CREATING LOOKUPTABLE
-int * lookuptable(float level, float(*operation)(float, float));
-// FUNCTIONS FOR LOOKUPTABLE
-
-float brightlut(float value, float level = 0);
-float contrastlut(float value, float level = 0);
-float negativelut(float value, float level = 0);
-
-// FUNCTION USING LOOKUPTABLE
-void basicoperations(float level, CImg<float> & image, float(*operation)(float, float));
-void Comparisions();
-
-// FLIPS
-void verticalFlip(CImg<float> & image);
-void horizontalFlip(CImg<float> & image);
-void diagonalFlip(CImg<float>& image);
-
-// SHRINK AND ENLARGE
-CImg<float> shrink(CImg<float> & image);
-CImg<float> enlarge(CImg<float> & image);
-
-// MEDIANFILTER AND MEDIANA
-CImg<float> * medianfilter(CImg<float> & image);
-float mediana(CImg<float> & image, int x, int y, int c);
-
-//GEOMETRICMEAN FILTER AND GEOMETRICMEAN
-float geometricmean(CImg<float> & image, int x, int y, int c);
-CImg<float> * geometricfilter(CImg<float> & image);
-
-// SAVING IMAGE FUNCTION
-void SaveImage(CImg<float> & image);
-void SaveImage2(CImg<float> & image);
-
-CImg<float> Load_Image(const char* name);
-
-// ERRORS CALCULATIONS
-void Mean_square_error(CImg<float> & image_without_noise, CImg<float> & image_with_noise);
-void Peak_mean_square_error(CImg<float> & image_without_noise, CImg<float> & image_with_noise);
-void Signal_to_noise_error(CImg<float> & image_without_noise, CImg<float> & image_with_noise);
-void Peak_signal_to_noise_error(CImg<float> & image_without_noise, CImg<float> & image_with_noise);
-void Maximum_difference(CImg<float> & image_without_noise,CImg<float> & image_with_noise);
-double Find_maximum_value(CImg<float> & image_without_noise);
-void Show_error_data(double clean_picture_data, double median_filter_data, double gmean_filter_data);
+using namespace std;
 
 
-
- ////////TASK 2 FUNCTIONS
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-
-//HISTOGRAM
-int * createhistogramtable(CImg<float> & image, int channel = 0 );
-void Createhistogramimage(CImg<float> & image, int channel = 0);
-
-//H1
-void UniformFinalProbabilityDensityFunction(CImg<float> & image);
-
-//S1
-CImg<float> * Low_pass_filter(CImg<float> & image, int mask_chosen = 1);
-float lpFilter(CImg<float> &image, int x, int y, int c, int * values_mask, double dividor);
-
-// AMEAN AS OPTIMALIZATION FOR MASK 1
-CImg<float> * ameanfilter(CImg<float> & image);
-int amean(CImg<float> & image, int x, int y, int c);
+constexpr int PIXEL_RANGE = 256;
+constexpr int MAX_PIXEL_VALUE = 255;
 
 
+static void showErrorData (double clean_picture_data, double median_filter_data, double gmean_filter_data) {
 
-//C1 - C6
-float Cmean(CImg<float> & image, int channel = 0 );
-float Cvariance(CImg<float> & image, int channel = 0);
-float Cstdev(CImg<float> & image, int channel = 0);
-float Cvarcoi(CImg<float> & image, int channel = 0);
-float Casyco(CImg<float> & image, int channel = 0);
-float Cfasyco(CImg<float> & image, int channel = 0);
-float Centropy(CImg<float> & image, int channel = 0);
-float Cvarcoii(CImg<float> & image, int channel = 0);
-
-// 01
-CImg<float> * Roberts_operator(CImg<float> & image);
-float roFilter(CImg<float> & image, int x, int y, int c);
-float roFilter2(CImg<float> & image, int x, int y, int c);
+	cout << "\nBefore processing " << clean_picture_data << endl;
+	cout << "After median filter " << median_filter_data << endl;
+	cout << "After geometric filter " << gmean_filter_data << endl;
+}
 
 
-// M
+template<typename T>
+T getMaximumPixelValue(const CImg<T> & image) {
 
-class StructuralElement;
-CImg<float> * Dilation(CImg<float> & image, StructuralElement & Elementk);
-void dilate(CImg<float> * image, int x, int y, StructuralElement & Element);
-CImg<float> * Erosion(CImg<float> & image, StructuralElement & Element);
-bool erosecheck(CImg<float> & image, int x, int y, StructuralElement & Element);
-CImg<float> * HMT(CImg<float> & image, StructuralElement & Element);
-bool HMTcheck(CImg<float> & image, int x, int y, StructuralElement & StEl);
+	T maximumValue = 0;
+	for (int c = 0; c < image.spectrum(); c++) {
+		for (int x = 0; x < image.width(); x++) {
+			for (int y = 0; y < image.height(); y++) {
+				if (maximumValue < image(x, y, 0, c)) {
+					if (image(x, y, 0, c) == MAX_PIXEL_VALUE)
+						return MAX_PIXEL_VALUE;
+					else
+						maximumValue = image(x, y, 0, c);
+				}
+			}
+		}
+	}
+	return maximumValue;
+}
 
-void Difference(CImg<float> & image1, CImg<float> & image2);
+static uint8_t clampToPixelValue(int newValue) {
+	if(newValue < 0)
+		return 0;
+	else if (newValue > 255)
+		return 255;
+	return static_cast<uint8_t>(newValue);
+}
+
+// FUNCTION CREATING LUT DEPENDIND ON THE OPERATION
+std::array<uint8_t, PIXEL_RANGE> createLookUpTable(uint8_t(*operation)(uint8_t))
+{
+	std::array<uint8_t, PIXEL_RANGE> lookUpTable{};
+	for(size_t i = 0; i < lookUpTable.size(); ++i) {
+		lookUpTable[i] = operation(i);
+	}
+	return lookUpTable;;
+}
+
+// POSSIBLE OPERATIONS FOR LUT
+
+uint8_t changeBrightness(uint8_t oldValue, uint8_t increment) {
+	return clampToPixelValue(oldValue + increment);
+}
+
+uint8_t changeContrast(uint8_t oldValue, uint8_t ratio) {
+	return clampToPixelValue((oldValue - 128)*ratio + 128);
+}
+
+uint8_t makeNegative(uint8_t oldValue) {
+	return clampToPixelValue(255 - oldValue);
+}
+
+void applyOperationToImage(CImg<uint8_t> & image, uint8_t(*operation)(uint8_t)) {
+	auto lookUpTable = createLookUpTable(operation);
+	for (int c = 0; c < image.spectrum(); c++) {
+		for (int x = 0; x < image.width(); x++) {
+			for (int y = 0; y < image.height(); y++) {
+				image(x, y, 0, c) = lookUpTable[image(x, y, 0, c)];
+			}
+		}
+	}
+}
+
+//FLIPS
+
+template <typename T>
+void verticalFlip(CImg<T> &image) {
+	for (int c = 0; c < image.spectrum(); c++) {
+		for (int x = 0; x < image.width(); x++) {
+			for (int y = 0; y < image.height() / 2; y++) {
+				swap(image(x, y, 0, c), image(x, image.height() - y - 1, 0, c));
+			}
+		}
+	}
+}
+
+template <typename T>
+void horizontalFlip(CImg<T> & image) {
+
+	for (int y = 0; y < image.height(); y++)
+	{
+		for (int x = 0; x < image.width() / 2; x++)
+		{
+			for (int c = 0; c < image.spectrum(); c++) {
+				swap(image(x, y, 0, c), image(image.width() - x - 1, y, 0, c));
+			}
+		}
+	}
+
+}
+
+template<typename T>
+void diagonalFlip(CImg<T>& image) {
+
+	for (int x = 0; x < image.width(); x++)
+	{
+		for (int y = 0; y < image.height() / 2; y++)
+		{
+			for (int c = 0; c < image.spectrum(); c++)
+			{
+				swap(image(x, y, 0, c), image(image.width() - 1 - x, image.height() - 1 - y, 0, c));
+			}
+		}
+	}
+}
+
+CImg<float> shrink(const CImg<float> & image) {
+
+	CImg<float> shrinked_image((image.width() / 2), (image.height() / 2), 1, 3);
+
+	for (int x = 0; x < shrinked_image.width(); x++)  //to not run out of table
+	{
+		for (int y = 0; y < shrinked_image.height(); y++)
+		{
+			for (int c = 0; c < image.spectrum(); c++)
+			{
+
+				shrinked_image(x, y, 0, c) = image(2 * x, 2 * y, 0, c); //every second pixel (0,0)(2,2)(4,4) etc
+
+			}
+		}
+	}
+
+	return shrinked_image;
+}
+
+CImg<float> enlarge(const CImg<float> & image) {
+
+	CImg<float> enlarged_image((image.width() * 2), (image.height() * 2), 1, 3);
+
+	for (int x = 0; x < enlarged_image.width() - 1; x += 2)
+	{
+		for (int y = 0; y < enlarged_image.height() - 1; y += 2)
+		{
+			for (int c = 0; c < image.spectrum(); c++)
+			{
+
+				enlarged_image(x, y, 0, c) = image(x / 2, y / 2, 0, c);
+				enlarged_image(x + 1, y + 1, 0, c) = image(x / 2, y / 2, 0, c);
+
+			}
+		}
+	}
+	return enlarged_image;
+}
+
+template<typename T>
+T median(const CImg<T> & image, int x, int y, int c, int maskSize)
+{
+	std::vector<T> values;
+	values.reserve(maskSize * maskSize);
+	int maskRange = maskSize / 2;
+	for (int i = -maskRange; i <= maskRange; i++)
+	{
+		for (int j = -maskRange; j <= maskRange; j++)
+		{
+			values.push_back(image(x + i, y + j, 0, c));
+		}
+	}
+	std::sort(values.begin(), values.end());
+	return values.at(values.size()/2);
+}
+
+template<typename T>
+T geometricMean(const CImg<T>& image, int x, int y, int c, int maskSize)
+{
+	double sum = 1;
+	int maskRange = maskSize / 2;
+	for (int i = -maskRange; i <= maskRange; i++)
+	{
+		for (int j = -maskRange; j <= maskRange; j++)
+		{
+			sum*=image(x + i, y + j, 0, c);
+		}
+	}
+	double root = 1.0f / (maskSize*maskSize);
+	return pow(sum, root);
+}
+
+template<typename T>
+CImg<T> medianfilter(const CImg<T> & image, int maskSize) {
+	CImg<T> filteredImage(image);
+	int maskRange = maskSize / 2;
+	if(!(maskSize % 2)) {
+		throw std::invalid_argument("Mask must be odd");
+	}
+	for (int c = 0; c < image.spectrum(); c++) {
+		for (int x = maskRange; x < image.width() - maskRange; x++) {
+			for (int y = maskRange; y < image.height() - maskRange; y++) {
+				filteredImage(x, y, 0, c) = median(image, x, y, c);
+			}
+		}
+	}
+	return filteredImage;
+}
+
+template<typename T>
+CImg<T> * geometricfilter(const CImg<T> & image, int maskSize) {
+	CImg<T> filteredImage(image);
+	int maskRange = maskSize / 2;
+	if(!(maskSize % 2)) {
+		throw std::invalid_argument("Mask must be odd");
+	}
+	for (int c = 0; c < image.spectrum(); c++) {
+		for (int x = maskRange; x < image.width() - maskRange; x++) {
+			for (int y = maskRange; y < image.height() - maskRange; y++) {
+				filteredImage(x, y, 0, c) = geometricMean(image, x, y, c);
+			}
+		}
+	}
+	return filteredImage;
+}
+
+template <typename T>
+void SaveImage(const CImg<T> & image) {
+	string name("output.bmp");
+	image.save(name.c_str());
+}
+
+template<typename T>
+void computeMeanSquareError(const CImg<T> & imageWithoutNoise, const CImg<T> & imageWithNoise)
+{
+	CImg<T> imageAfterMedianFilter = medianfilter(imageWithNoise);
+	CImg<T> imageAfterGeometricFilter = geometricfilter(imageWithNoise);
+	double meanError = 0;
+	double meanErrorAfterMedianFilter = 0;
+	double meanErrorAfterGeometric = 0;
+
+	for (int c = 0; c < imageWithoutNoise.spectrum(); c++)
+	{
+		for (int x = 0; x < imageWithoutNoise.width(); x++)
+		{
+			for (int y = 0; y < imageWithoutNoise.height(); y++)
+			{
+				meanError += pow((imageWithoutNoise(x, y, 0, c) - imageWithNoise(x, y, 0, c)), 2);
+				meanErrorAfterGeometric += pow((imageWithoutNoise(x, y, 0, c) - imageAfterGeometricFilter(x, y, 0, c)), 2);
+				meanErrorAfterMedianFilter += pow((imageWithoutNoise(x, y, 0, c) - imageAfterMedianFilter(x, y, 0, c)), 2);
+			}
+		}
+
+	}
 
 
+	double coefficient = (1.0 / (imageWithoutNoise.width()*imageWithoutNoise.height() * imageWithoutNoise.spectrum()));
+	meanError = coefficient*meanError;
+	meanErrorAfterGeometric = coefficient*meanErrorAfterGeometric;
+	meanErrorAfterMedianFilter = coefficient*meanErrorAfterMedianFilter;
 
-//region growing,  _x _y are coordinates of seed point
-CImg<float>* Region_growing(CImg<float>* source_image, int tolerancy, int _x, int _y); 
-void Grow_region(int** seed_array, CImg<float>* image,CImg<float>* output,  int tolerancy, int x, int y);
+	cout << "\nMean square error" << endl;
+	showErrorData(meanError, meanErrorAfterMedianFilter, meanErrorAfterGeometric);
 
-class StructuralElement {
-private:
-	unsigned char tab[9];
-public:
-	StructuralElement(int n);
-	int operator()(int x, int y) { return tab[y * 3 + x]; }
-};
+}
 
-#endif // !IMAGE_H_
+template<typename T>
+void computePeakMeanSquareError(const CImg<T> &imageWithoutNoise, const CImg<T> &imageWithNoise)
+{
+	CImg<T> imageAfterMedianFilter = medianfilter(imageWithNoise);
+	CImg<T> imageAfterGeometricFilter = geometricfilter(imageWithNoise);
+	double meanError = 0;
+	double meanErrorAfterMedianFilter = 0;
+	double meanErrorAfterGeometric = 0;
 
+	for (int c = 0; c < imageWithoutNoise.spectrum(); c++)
+	{
+		for (int x = 0; x < imageWithoutNoise.width(); x++)
+		{
+			for (int y = 0; y < imageWithoutNoise.height(); y++)
+			{
+				meanError += pow((imageWithoutNoise(x, y, 0, c) - imageWithNoise(x, y, 0, c)), 2);
+				meanErrorAfterGeometric += pow((imageWithoutNoise(x, y, 0, c) - imageAfterGeometricFilter(x, y, 0, c)), 2);
+				meanErrorAfterMedianFilter += pow((imageWithoutNoise(x, y, 0, c) - imageAfterMedianFilter(x, y, 0, c)), 2);
+			}
+		}
+
+	}
+	int pow_max_value = pow(getMaximumPixelValue(imageWithoutNoise), 2);
+	double coefficient = (1.0 / (imageWithoutNoise.width()*imageWithoutNoise.height() * imageWithoutNoise.spectrum()));
+	meanError = (coefficient*meanError) / pow_max_value;
+	meanErrorAfterMedianFilter = (coefficient*meanErrorAfterMedianFilter) / pow_max_value;
+	meanErrorAfterGeometric = (coefficient*meanErrorAfterGeometric) / pow_max_value;
+
+	cout << "\nPeak mean square error" << endl;
+	showErrorData(meanError,meanErrorAfterMedianFilter,meanErrorAfterGeometric);
+
+}
+
+template <typename T>
+void calculateSignalToNoiseError(const CImg<T> & imageWithoutNoise, const CImg<T> & imageWithNoise)
+{
+	CImg<T> imageAfterMedianFilter = medianfilter(imageWithNoise);
+	CImg<T> imageAfterGeometricFilter = geometricfilter(imageWithNoise);
+	double error = 0;
+	double errorAfterMedianFilter = 0;
+	double errorAfterGeometricFilter = 0;
+	double sum = 0;
+
+	for (size_t c = 0; c < imageWithoutNoise.spectrum(); c++)
+	{
+		for (size_t x = 0; x < imageWithoutNoise.width(); x++)
+		{
+			for (size_t y = 0; y < imageWithoutNoise.height(); y++)
+			{
+				sum += pow(imageWithoutNoise(x, y, 0, c), 2);
+				error += pow((imageWithoutNoise(x, y, 0, c) - imageWithNoise(x, y, 0, c)), 2);
+				errorAfterGeometricFilter += pow((imageWithoutNoise(x, y, 0, c) - imageAfterGeometricFilter(x, y, 0, c)), 2);
+				errorAfterMedianFilter += pow((imageWithoutNoise(x, y, 0, c) - imageAfterMedianFilter(x, y, 0, c)), 2);
+			}
+		}
+
+	}
+
+	error = 10*log10(sum/error);
+	errorAfterGeometricFilter = 10*log10(sum/ errorAfterGeometricFilter);
+	errorAfterMedianFilter = 10*log10(sum / errorAfterMedianFilter);
+
+	cout << "Signal to noise error" << endl;
+	showErrorData(error,errorAfterMedianFilter,errorAfterGeometricFilter);
+
+}
+
+template<typename T>
+void computePeakSignalToNoiseError(const CImg<T> & imageWithoutNoise, const CImg<T> & imageWithNoise)
+{
+	CImg<T> imageAfterMedianFilter = medianfilter(imageWithNoise);
+	CImg<T> imageAfterGeometricFilter = geometricfilter(imageWithNoise);
+	double error = 0;
+	double errorAfterMedianFilter = 0;
+	double errorAfterGeometricFilter = 0;
+	double sum = 0;
+
+	for (size_t c = 0; c < imageWithoutNoise.spectrum(); c++)
+	{
+		for (int x = 0; x < imageWithoutNoise.width(); x++)
+		{
+			for (int y = 0; y < imageWithoutNoise.height(); y++)
+			{
+				error += pow((imageWithoutNoise(x, y, 0, c) - imageWithNoise(x, y, 0, c)), 2);
+				errorAfterGeometricFilter += pow((imageWithoutNoise(x, y, 0, c) - imageAfterGeometricFilter(x, y, 0, c)), 2);
+				errorAfterMedianFilter += pow((imageWithoutNoise(x, y, 0, c) - imageAfterMedianFilter(x, y, 0, c)), 2);
+			}
+		}
+	}
+	double coefficient = (1.0 / (imageWithoutNoise.width()*imageWithoutNoise.height() * imageWithoutNoise.spectrum()));
+	int pow_max_value = pow(getMaximumPixelValue(imageWithoutNoise), 2);
+	error = 10 * log10(pow_max_value / (error*coefficient));
+	errorAfterGeometricFilter = 10 * log10(pow_max_value / (errorAfterGeometricFilter*coefficient));
+	errorAfterMedianFilter = 10 * log10(pow_max_value / (errorAfterMedianFilter*coefficient));
+
+	cout << "Peak signal to noise error" << endl;
+	showErrorData(error, errorAfterMedianFilter, errorAfterGeometricFilter);
+}
+
+template<typename T>
+void calculateMaximumDifference(const CImg<T> & imageWithoutNoise, const CImg<T> & imageWithNoise)
+{
+	if(imageWithNoise.width() != imageWithoutNoise.width() ||
+	   imageWithNoise.height() != imageWithoutNoise.height() ||
+	   imageWithNoise.spectrum() != imageWithoutNoise.spectrum()) {
+		throw std::invalid_argument("Images must have the same dimensions");
+	}
+
+	CImg<T> imageAfterMedianFilter = medianfilter(imageWithNoise);
+	CImg<T> imageAfterGeometricFilter = geometricfilter(imageWithNoise);
+	double maxDiff = 0;
+	double maxDiffAfterMedianFilter = 0;
+	double maxDiffAfterGeometric = 0;
+
+
+	for (size_t c = 0; c < imageWithoutNoise.spectrum(); c++)
+	{
+		for (size_t x = 0; x < imageWithoutNoise.width(); x++)
+		{
+			for (size_t y = 0; y < imageWithoutNoise.height(); y++)
+			{
+				if (maxDiff < abs ( (imageWithoutNoise(x, y, 0, c) - imageWithNoise(x, y, 0, c))))
+					maxDiff = abs((imageWithoutNoise(x, y, 0, c) - imageWithNoise(x, y, 0, c)));
+
+				if (maxDiffAfterMedianFilter < abs ( (imageWithoutNoise(x, y, 0, c) - imageAfterMedianFilter(x, y, 0, c))))
+					maxDiffAfterMedianFilter = abs((imageWithoutNoise(x, y, 0, c) - imageAfterMedianFilter(x, y, 0, c)));
+
+				if (maxDiffAfterGeometric < abs ((imageWithoutNoise(x, y, 0, c) - imageAfterGeometricFilter(x, y, 0, c))))
+					maxDiffAfterGeometric = abs((imageWithoutNoise(x, y, 0, c) - imageAfterGeometricFilter(x, y, 0, c)));
+			}
+		}
+
+	}
+
+	cout << "Maximum difference" << endl;
+	showErrorData(maxDiff, maxDiffAfterMedianFilter, maxDiffAfterGeometric);
+}
+
+#endif

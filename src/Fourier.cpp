@@ -1,3 +1,4 @@
+/*
 #define _USE_MATH_DEFINES
 #include "Fourier.h"
 #include <cmath>
@@ -555,20 +556,20 @@ complex<double>** PhaseMod(CImg<float>& image, int k, int l)
 	}
 
 
-	/*for (int i = 0; i < (image.width() / 2); ++i)
-	{
-		for (int j = 0; j < (image.height() / 2); ++j)
-		{
-			std::swap(Arr[j][i], Arr[j + image.height() / 2][i + image.width() / 2]);
-		}
-	}
-	for (int i = image.width() / 2; i < image.width(); ++i)
-	{
-		for (int j = 0; j < (image.height() / 2); ++j)
-		{
-			std::swap(Arr[j][i], Arr[j + image.height() / 2][i - image.width() / 2]);
-		}
-	}*/
+//	for (int i = 0; i < (image.width() / 2); ++i)
+//	{
+//		for (int j = 0; j < (image.height() / 2); ++j)
+//		{
+//			std::swap(Arr[j][i], Arr[j + image.height() / 2][i + image.width() / 2]);
+//		}
+//	}
+//	for (int i = image.width() / 2; i < image.width(); ++i)
+//	{
+//		for (int j = 0; j < (image.height() / 2); ++j)
+//		{
+//			std::swap(Arr[j][i], Arr[j + image.height() / 2][i - image.width() / 2]);
+//		}
+//	}
 
 
 	Arr2 = FFT(image);
@@ -616,3 +617,4 @@ void rescale(CImg<float> & image)
 		}
 	}
 }
+*/

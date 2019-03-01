@@ -1,9 +1,10 @@
+/*
 #ifndef FOURIER_H_
 #define FOURIER_H_
 
 #include <complex>
 #include "CImg.h"
-#include "Image.h"
+#include "IMAGE.h"
 
 using namespace cimg_library;
 using namespace std;
@@ -37,3 +38,4 @@ CImg<float>* Print(complex<double>**Arr, int N, int M);
 bool checkRadius(int x, int y, int x_0, int y_0, int radius);
 bool checkRadiusRegion(int x, int y, int x_0, int y_0, int radius_start, int radius_end);
 #endif // !FOURIER_H_
+*/

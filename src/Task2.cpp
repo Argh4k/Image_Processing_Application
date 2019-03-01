@@ -1,3 +1,4 @@
+/*
 #include "IMAGE.h"
 #include <iostream>
 #include <string>
@@ -12,7 +13,7 @@ using namespace std;
 
 const int HISTOGRAM_SIZE = 256; //max possible level of intensity
 
-class Mask {
+class ImageMask {
 private:
 	float dividor;
 	int * mask_values;
@@ -23,7 +24,7 @@ public:
 	float Get_dividor() { return dividor; }
 	int *Get_mask() { return mask_values; }
 
-	Mask(int i) {
+	ImageMask(int i) {
 		stringstream ss;
 		mask_values = new int[9];
 		if (i == 1)
@@ -47,7 +48,7 @@ public:
 			ss >> mask_values[i];
 		}
 	}
-	~Mask() {
+	~ImageMask() {
 		delete[] mask_values;
 }
 };
@@ -151,7 +152,7 @@ void UniformFinalProbabilityDensityFunction(CImg<float> & image)
 CImg<float> * Low_pass_filter(CImg<float> & image, int mask_chosen) {
 	CImg <float> * filtredimage = new CImg<float>(image);
 
-	Mask mask(mask_chosen);
+	ImageMask mask(mask_chosen);
 	int * values_mask = mask.Get_mask();
 
 	double dividor = mask.Get_dividor();
@@ -385,3 +386,4 @@ float roFilter2(CImg<float> & image, int x, int y, int c)
 	return abs1 + abs2;
 }
 
+*/

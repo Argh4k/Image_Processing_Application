@@ -1,3 +1,4 @@
+/*
 #include "IMAGE.h"
 #include <iostream>
 #include <string>
@@ -304,3 +305,4 @@ void Grow_region(int** seed_array, CImg<float> *image, CImg<float>* output, int 
 	
 	
 }
+*/

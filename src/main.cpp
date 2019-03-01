@@ -48,7 +48,7 @@ int main(int argc, char * argv[]) {
 	CImg<float> lena(400, 400, 1, 3, 0);
 	lena.save("output.bmp");
 	return 0;
-
+/*
 	float(*operations[3])(float, float) = { brightlut, contrastlut, negativelut };
 
 	string operation_to_do;
@@ -114,7 +114,7 @@ int main(int argc, char * argv[]) {
 		}
 		else if ((string)argv[1] == "--pmse") {
 
-			Peak_mean_square_error(image_without_noise, image_with_noise);
+            computeMeanSquareError(image_without_noise, image_with_noise);
 			return 0;
 
 		}
@@ -524,4 +524,5 @@ int main(int argc, char * argv[]) {
 	else { cout << "Error couldnt match to any known function :C " << endl;  return 0; }
 
 	return 0;
+ */
 }
