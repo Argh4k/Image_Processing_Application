@@ -6,10 +6,9 @@ include_directories(include)
 
 set(SOURCES
         src/main.cpp
-        src/IMAGE.cpp
         src/Task2.cpp
         src/Task3
-        src/Fourier)
+        src/Fourier include/Histogram.h include/ImageUtils.h)
 
 add_executable(imageProcessing ${SOURCES})
 

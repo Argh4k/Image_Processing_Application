@@ -28,6 +28,7 @@ static void showErrorData (double clean_picture_data, double median_filter_data,
 }
 
 
+
 template<typename T>
 T getMaximumPixelValue(const CImg<T> & image) {
 
@@ -47,18 +48,20 @@ T getMaximumPixelValue(const CImg<T> & image) {
 	return maximumValue;
 }
 
-static uint8_t clampToPixelValue(int newValue) {
+template<typename T>
+static T clampToPixelValue(int newValue) {
 	if(newValue < 0)
 		return 0;
 	else if (newValue > 255)
 		return 255;
-	return static_cast<uint8_t>(newValue);
+	return static_cast<T>(newValue);
 }
 
 // FUNCTION CREATING LUT DEPENDIND ON THE OPERATION
-std::array<uint8_t, PIXEL_RANGE> createLookUpTable(uint8_t(*operation)(uint8_t))
+template<typename T>
+std::array<T, PIXEL_RANGE> createLookUpTable(T(*operation)(T))
 {
-	std::array<uint8_t, PIXEL_RANGE> lookUpTable{};
+	std::array<T, PIXEL_RANGE> lookUpTable{};
 	for(size_t i = 0; i < lookUpTable.size(); ++i) {
 		lookUpTable[i] = operation(i);
 	}
@@ -67,19 +70,23 @@ std::array<uint8_t, PIXEL_RANGE> createLookUpTable(uint8_t(*operation)(uint8_t))
 
 // POSSIBLE OPERATIONS FOR LUT
 
-uint8_t changeBrightness(uint8_t oldValue, uint8_t increment) {
+template <typename T>
+T changeBrightness(T oldValue, T increment) {
 	return clampToPixelValue(oldValue + increment);
 }
 
-uint8_t changeContrast(uint8_t oldValue, uint8_t ratio) {
+template <typename T>
+T changeContrast(T oldValue, T ratio) {
 	return clampToPixelValue((oldValue - 128)*ratio + 128);
 }
 
-uint8_t makeNegative(uint8_t oldValue) {
+template <typename T>
+T makeNegative(T oldValue) {
 	return clampToPixelValue(255 - oldValue);
 }
 
-void applyOperationToImage(CImg<uint8_t> & image, uint8_t(*operation)(uint8_t)) {
+template <typename T>
+void applyOperationToImage(CImg<T> & image, T(*operation)(T)) {
 	auto lookUpTable = createLookUpTable(operation);
 	for (int c = 0; c < image.spectrum(); c++) {
 		for (int x = 0; x < image.width(); x++) {
@@ -240,11 +247,7 @@ CImg<T> * geometricfilter(const CImg<T> & image, int maskSize) {
 	return filteredImage;
 }
 
-template <typename T>
-void SaveImage(const CImg<T> & image) {
-	string name("output.bmp");
-	image.save(name.c_str());
-}
+
 
 template<typename T>
 void computeMeanSquareError(const CImg<T> & imageWithoutNoise, const CImg<T> & imageWithNoise)

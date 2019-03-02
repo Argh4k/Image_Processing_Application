@@ -11,7 +11,7 @@
 using namespace cimg_library;
 using namespace std;
 
-const int HISTOGRAM_SIZE = 256; //max possible level of intensity
+
 
 class ImageMask {
 private:
@@ -54,60 +54,11 @@ public:
 };
 
 
-CImg<float>  Load_Image(const char* name) {
-
-	ifstream file(name);
-
-	if(file.good())
-	{
-		CImg<float> image;
-		image.load(name);
-		return image;
-	}
-	else
-	{
-		cout << " Couldn't find file: " << name << endl;
-		exit(0);
-	}
-}
 
 
-int * createhistogramtable(CImg<float> & image, int channel)
-{
-	int * histogram = new int[HISTOGRAM_SIZE]();
-	for (int x = 0; x < image.width(); x++)
-	{
-		for (int y = 0; y < image.height(); y++)
-		{
-			histogram[(int)image(x, y,0, channel)]++;
-		}
-	}
-	cout << endl << endl;
-	return histogram;
-}
 
 
-void Createhistogramimage(CImg<float> & image,int channel)
-{
-	int * histogram = createhistogramtable(image, channel);
-	int histogramheight = 0;
-	for (int i = 0; i < HISTOGRAM_SIZE; i++)
-	{
-		if (histogram[i] > histogramheight)
-			histogramheight = histogram[i];
-	}
-	CImg<float> histogrampicture(HISTOGRAM_SIZE, histogramheight/10 + 1, 1, 3);
-	for (int x = 0; x < HISTOGRAM_SIZE; x+=2)
-	{
-		for (float y = (histogramheight)/10 ; y > histogramheight/10-histogram[x]/10 ; y--)
-		{
-			histogrampicture(x, y, 0, channel) = 255;
-			histogrampicture(x+1, y, 0, channel) = 255;
-		}
-	}
-	SaveImage(histogrampicture);
-	delete[] histogram;
-}
+
 
 
 void UniformFinalProbabilityDensityFunction(CImg<float> & image)
@@ -172,7 +123,7 @@ CImg<float> * Low_pass_filter(CImg<float> & image, int mask_chosen) {
 }
 
 
-//mask_chose is argv[3]!  btw fajny bajer, ten komentarz pojawia siê przy funkcji :)
+//mask_chose is argv[3]!  btw fajny bajer, ten komentarz pojawia siï¿½ przy funkcji :)
 float lpFilter(CImg<float> &image, int x, int y, int c, int values_mask[], double dividor ) {
 
 	int iterator = 0;
